@@ -11,6 +11,7 @@ load test_helper
     .mise/tasks/test \
     .mise/tasks/doctor \
     .github/workflows/test.yml \
+    libexec/test \
     lib/.gitkeep
   do
     [ -e "$REPO_DIR/$path" ]
