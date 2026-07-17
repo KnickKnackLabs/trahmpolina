@@ -26,24 +26,10 @@ SH
 exit 0
 SH
 
-  cat > "$MOCK_DIR/getconf" <<'SH'
-#!/usr/bin/env bash
-[ "${1:-}" = "_NPROCESSORS_ONLN" ] || exit 2
-printf '8\n'
-SH
-
-  cat > "$MOCK_DIR/sysctl" <<'SH'
-#!/usr/bin/env bash
-[ "${1:-}" = "-n" ] && [ "${2:-}" = "hw.logicalcpu" ] || exit 2
-printf '6\n'
-SH
-
-  chmod +x "$MOCK_DIR/bats" "$MOCK_DIR/rush" "$MOCK_DIR/getconf" "$MOCK_DIR/sysctl"
+  chmod +x "$MOCK_DIR/bats" "$MOCK_DIR/rush"
 
   export BATS_COMMAND="$MOCK_DIR/bats"
   export RUSH_COMMAND="$MOCK_DIR/rush"
-  export GETCONF_COMMAND="$MOCK_DIR/getconf"
-  export SYSCTL_COMMAND="$MOCK_DIR/sysctl"
   unset BATS_NUMBER_OF_PARALLEL_JOBS BATS_PARALLEL_BINARY_NAME
 }
 
@@ -57,11 +43,11 @@ arg_count() {
   awk -F= -v expected="$expected" '$1 == "arg" && substr($0, 5) == expected { count++ } END { print count + 0 }' "$BATS_LOG"
 }
 
-@test "test task defaults to logical CPUs and Rush across files" {
+@test "test task defaults to four Rush jobs across files" {
   run template test skeleton --filter doctor
   [ "$status" -eq 0 ]
-  [[ "$output" == *"8 jobs across files"* ]]
-  [ "$(log_value jobs)" = "8" ]
+  [[ "$output" == *"4 jobs across files"* ]]
+  [ "$(log_value jobs)" = "4" ]
   [ "$(log_value runner)" = "$MOCK_DIR/rush" ]
   [ "$(arg_count --no-parallelize-within-files)" -eq 1 ]
   [ "$(arg_count "$REPO_DIR/test/skeleton.bats")" -eq 1 ]
@@ -113,7 +99,7 @@ arg_count() {
 
   run -127 template test skeleton
   [ "$status" -eq 127 ]
-  [[ "$output" == *"parallel runner '$MOCK_DIR/missing-rush' is unavailable for 8 jobs"* ]]
+  [[ "$output" == *"parallel runner '$MOCK_DIR/missing-rush' is unavailable for 4 jobs"* ]]
   [[ "$output" == *"run 'mise install' or use --jobs 1"* ]]
   [ ! -e "$BATS_LOG" ]
 }
@@ -134,19 +120,6 @@ arg_count() {
   [ "$status" -eq 0 ]
   [ "$(arg_count --parallel-binary-name)" -eq 1 ]
   [ "$(arg_count "$MOCK_DIR/alternate-runner")" -eq 1 ]
-}
-
-@test "macOS sysctl is the CPU fallback when getconf fails" {
-  cat > "$MOCK_DIR/getconf" <<'SH'
-#!/usr/bin/env bash
-exit 1
-SH
-  chmod +x "$MOCK_DIR/getconf"
-
-  run template test skeleton
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"6 jobs across files"* ]]
-  [ "$(log_value jobs)" = "6" ]
 }
 
 @test "invalid job override fails before BATS" {

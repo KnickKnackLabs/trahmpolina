@@ -279,9 +279,9 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
         <Link href="https://github.com/shenwei356/rush">Rush</Link>
         {" to run separate "}
         <Code>.bats</Code>
-        {" files concurrently. Tests inside one file remain serial because BATS 1.13 has expensive within-file semaphore polling."}
+        {" files with a measured four-job default. Tests inside one file remain serial because BATS 1.13 has expensive within-file semaphore polling."}
       </Paragraph>
-      <CodeBlock lang="bash">{`mise run test                         # measured parallel default
+      <CodeBlock lang="bash">{`mise run test                         # measured four-job default
 mise run test --jobs 4                # explicit job count
 BATS_NUMBER_OF_PARALLEL_JOBS=2 mise run test
 mise run test --jobs 1                # serial debugging`}</CodeBlock>

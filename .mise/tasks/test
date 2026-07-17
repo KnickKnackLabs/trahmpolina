@@ -11,40 +11,13 @@ set -euo pipefail
 TEST_DIR="$MISE_CONFIG_ROOT/test"
 BATS_COMMAND="${BATS_COMMAND:-}"
 RUSH_COMMAND="${RUSH_COMMAND:-rush}"
-GETCONF_COMMAND="${GETCONF_COMMAND:-getconf}"
-SYSCTL_COMMAND="${SYSCTL_COMMAND:-sysctl}"
+DEFAULT_PARALLEL_JOBS=4
 
 command_available() {
   case "$1" in
     */*) [ -x "$1" ] ;;
     *) command -v "$1" >/dev/null 2>&1 ;;
   esac
-}
-
-detect_logical_cpus() {
-  local count=""
-
-  if command_available "$GETCONF_COMMAND"; then
-    if count=$("$GETCONF_COMMAND" _NPROCESSORS_ONLN 2>/dev/null); then
-      :
-    else
-      count=""
-    fi
-  fi
-
-  if ! [[ "$count" =~ ^[1-9][0-9]*$ ]] && command_available "$SYSCTL_COMMAND"; then
-    if count=$("$SYSCTL_COMMAND" -n hw.logicalcpu 2>/dev/null); then
-      :
-    else
-      count=""
-    fi
-  fi
-
-  if ! [[ "$count" =~ ^[1-9][0-9]*$ ]]; then
-    count=1
-  fi
-
-  printf '%s\n' "$count"
 }
 
 args=()
@@ -98,7 +71,9 @@ if [ -n "$cli_jobs" ]; then
 elif [ -n "${BATS_NUMBER_OF_PARALLEL_JOBS:-}" ]; then
   effective_jobs="$BATS_NUMBER_OF_PARALLEL_JOBS"
 else
-  effective_jobs=$(detect_logical_cpus)
+  # Hosted Ubuntu/macOS and local candidate measurements selected four as the
+  # conservative shared default. Callers can still tune or serialize explicitly.
+  effective_jobs="$DEFAULT_PARALLEL_JOBS"
   export BATS_NUMBER_OF_PARALLEL_JOBS="$effective_jobs"
 fi
 
