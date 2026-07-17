@@ -163,7 +163,7 @@ const readme = (
     <Section title="What this is">
       <Paragraph>
         <Code>template</Code>
-        {" is the default empty room for a new KnickKnackLabs tool: mise-managed tasks, BATS tests, codebase convention lints, generated README, CI, and a "}
+        {" is the default empty room for a new KnickKnackLabs tool: mise-managed tasks, parallel BATS tests, codebase convention lints, generated README, CI, and a "}
         <Code>doctor</Code>
         {" task that tells you whether your clone has the optional local pre-commit hook installed."}
       </Paragraph>
@@ -229,6 +229,11 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
           <Cell><Code>test/test_helper.bash</Code></Cell>
         </TableRow>
         <TableRow>
+          <Cell>Parallel BATS</Cell>
+          <Cell>Rush schedules independent test files concurrently, with explicit job and serial overrides.</Cell>
+          <Cell><Code>.mise/tasks/test</Code></Cell>
+        </TableRow>
+        <TableRow>
           <Cell>Mac + Linux CI</Cell>
           <Cell>Bash and tooling differences show up before merge.</Cell>
           <Cell>{oses.join(" + ") || "workflow pending"}</Cell>
@@ -268,6 +273,25 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
       </Table>
     </Section>
 
+    <Section title="Parallel tests">
+      <Paragraph>
+        {"The canonical test task uses "}
+        <Link href="https://github.com/shenwei356/rush">Rush</Link>
+        {" to run separate "}
+        <Code>.bats</Code>
+        {" files concurrently. Tests inside one file remain serial because BATS 1.13 has expensive within-file semaphore polling."}
+      </Paragraph>
+      <CodeBlock lang="bash">{`mise run test                         # measured parallel default
+mise run test --jobs 4                # explicit job count
+BATS_NUMBER_OF_PARALLEL_JOBS=2 mise run test
+mise run test --jobs 1                # serial debugging`}</CodeBlock>
+      <Paragraph>
+        {"Parallel suites must isolate mutable state per test and process. Use "}
+        <Code>$BATS_TEST_TMPDIR</Code>
+        {", unique ports, and fixture-local repositories instead of shared files, services, HOME overrides, or repository mutations."}
+      </Paragraph>
+    </Section>
+
     <Section title="When you copy it">
       <List ordered>
         <Item>Rename <Code>PROJECT</Code> in <Code>README.tsx</Code>.</Item>
@@ -276,6 +300,7 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
         <Item>Add real task files under <Code>.mise/tasks/</Code>; use <Code>$MISE_CONFIG_ROOT</Code> inside tasks only.</Item>
         <Item>Put shared Bash helpers in <Code>lib/</Code> only once multiple tasks need them.</Item>
         <Item>If the installed tool resolves caller-relative paths, read the shiv-provided <Code>{"<PACKAGE>_CALLER_PWD"}</Code> variable, not generic <Code>CALLER_PWD</Code>.</Item>
+        <Item>Keep parallel tests isolated per test/process, or opt the suite into serial execution until shared state is removed.</Item>
       </List>
     </Section>
 

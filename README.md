@@ -7,7 +7,7 @@
 Copy the boring parts so the interesting parts start sooner.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 3](https://img.shields.io/badge/tests-3-brightgreen?style=flat)](test/)
+[![tests: 14](https://img.shields.io/badge/tests-14-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -18,7 +18,7 @@ Copy the boring parts so the interesting parts start sooner.
 
 ## What this is
 
-`template` is the default empty room for a new KnickKnackLabs tool: mise-managed tasks, BATS tests, codebase convention lints, generated README, CI, and a `doctor` task that tells you whether your clone has the optional local pre-commit hook installed.
+`template` is the default empty room for a new KnickKnackLabs tool: mise-managed tasks, parallel BATS tests, codebase convention lints, generated README, CI, and a `doctor` task that tells you whether your clone has the optional local pre-commit hook installed.
 
 This is deliberately a normal repo, not a GitHub template repo. Copy the files, start fresh history for the new tool, and keep this repo as the living reference skeleton.
 
@@ -56,6 +56,7 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
 | Doctor hook check | Local pre-commit hooks are clone-local, so the repo can report them without pretending they are tracked. | `mise run doctor`            |
 | Convention lints  | Best-practice drift gets caught as code, not folklore.                                                   | `[_.codebase].lint`          |
 | Real test path    | BATS tests call tasks through `mise run`, not raw scripts.                                               | `test/test_helper.bash`      |
+| Parallel BATS     | Rush schedules independent test files concurrently, with explicit job and serial overrides.              | `.mise/tasks/test`           |
 | Mac + Linux CI    | Bash and tooling differences show up before merge.                                                       | ubuntu-latest + macos-latest |
 
 ## Scaffold inventory
@@ -78,6 +79,19 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
 | `mise run doctor` | Check local development setup |
 | `mise run test`   | Run BATS tests                |
 
+## Parallel tests
+
+The canonical test task uses [Rush](https://github.com/shenwei356/rush) to run separate `.bats` files concurrently. Tests inside one file remain serial because BATS 1.13 has expensive within-file semaphore polling.
+
+```bash
+mise run test                         # measured parallel default
+mise run test --jobs 4                # explicit job count
+BATS_NUMBER_OF_PARALLEL_JOBS=2 mise run test
+mise run test --jobs 1                # serial debugging
+```
+
+Parallel suites must isolate mutable state per test and process. Use `$BATS_TEST_TMPDIR`, unique ports, and fixture-local repositories instead of shared files, services, HOME overrides, or repository mutations.
+
 ## When you copy it
 
 1. Rename `PROJECT` in `README.tsx`.
@@ -86,6 +100,7 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
 4. Add real task files under `.mise/tasks/`; use `$MISE_CONFIG_ROOT` inside tasks only.
 5. Put shared Bash helpers in `lib/` only once multiple tasks need them.
 6. If the installed tool resolves caller-relative paths, read the shiv-provided `<PACKAGE>_CALLER_PWD` variable, not generic `CALLER_PWD`.
+7. Keep parallel tests isolated per test/process, or opt the suite into serial execution until shared state is removed.
 
 <details>
 <summary><b>Current convention checks</b></summary>
@@ -115,7 +130,7 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **3 tests** and **2 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **14 tests** and **2 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

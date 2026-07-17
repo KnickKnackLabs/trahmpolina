@@ -2,12 +2,50 @@
 #MISE description="Run BATS tests"
 #MISE dir="{{config_root}}"
 #USAGE arg "[args]" default="" var=#true help="Test suites or bats arguments"
-#USAGE example "mise run test" header="Run all tests"
+#USAGE example "mise run test" header="Run all tests in parallel across files"
 #USAGE example "mise run test skeleton" header="Run a specific suite by name"
 #USAGE example "mise run test --filter doctor" header="Filter tests by name"
+#USAGE example "mise run test --jobs 1" header="Run serially for debugging"
 set -euo pipefail
 
 TEST_DIR="$MISE_CONFIG_ROOT/test"
+BATS_COMMAND="${BATS_COMMAND:-}"
+RUSH_COMMAND="${RUSH_COMMAND:-rush}"
+GETCONF_COMMAND="${GETCONF_COMMAND:-getconf}"
+SYSCTL_COMMAND="${SYSCTL_COMMAND:-sysctl}"
+
+command_available() {
+  case "$1" in
+    */*) [ -x "$1" ] ;;
+    *) command -v "$1" >/dev/null 2>&1 ;;
+  esac
+}
+
+detect_logical_cpus() {
+  local count=""
+
+  if command_available "$GETCONF_COMMAND"; then
+    if count=$("$GETCONF_COMMAND" _NPROCESSORS_ONLN 2>/dev/null); then
+      :
+    else
+      count=""
+    fi
+  fi
+
+  if ! [[ "$count" =~ ^[1-9][0-9]*$ ]] && command_available "$SYSCTL_COMMAND"; then
+    if count=$("$SYSCTL_COMMAND" -n hw.logicalcpu 2>/dev/null); then
+      :
+    else
+      count=""
+    fi
+  fi
+
+  if ! [[ "$count" =~ ^[1-9][0-9]*$ ]]; then
+    count=1
+  fi
+
+  printf '%s\n' "$count"
+}
 
 args=()
 if [ -n "${usage_args:-}" ]; then
@@ -34,4 +72,74 @@ if ! $has_target; then
   resolved+=("$TEST_DIR/")
 fi
 
-exec bats --print-output-on-failure "${resolved[@]}"
+cli_jobs=""
+cli_parallel_binary=""
+has_within_file_override=false
+
+for ((index = 0; index < ${#resolved[@]}; index++)); do
+  arg="${resolved[$index]}"
+  case "$arg" in
+    -j|--jobs)
+      next=$((index + 1))
+      cli_jobs="${resolved[$next]-}"
+      ;;
+    --parallel-binary-name)
+      next=$((index + 1))
+      cli_parallel_binary="${resolved[$next]-}"
+      ;;
+    --no-parallelize-within-files)
+      has_within_file_override=true
+      ;;
+  esac
+done
+
+if [ -n "$cli_jobs" ]; then
+  effective_jobs="$cli_jobs"
+elif [ -n "${BATS_NUMBER_OF_PARALLEL_JOBS:-}" ]; then
+  effective_jobs="$BATS_NUMBER_OF_PARALLEL_JOBS"
+else
+  effective_jobs=$(detect_logical_cpus)
+  export BATS_NUMBER_OF_PARALLEL_JOBS="$effective_jobs"
+fi
+
+if ! [[ "$effective_jobs" =~ ^[1-9][0-9]*$ ]]; then
+  echo "Error: BATS parallel jobs must be a positive integer, got '$effective_jobs'." >&2
+  exit 2
+fi
+
+if [ -n "$cli_parallel_binary" ]; then
+  effective_parallel_binary="$cli_parallel_binary"
+elif [ -n "${BATS_PARALLEL_BINARY_NAME:-}" ]; then
+  effective_parallel_binary="$BATS_PARALLEL_BINARY_NAME"
+else
+  effective_parallel_binary="$RUSH_COMMAND"
+  export BATS_PARALLEL_BINARY_NAME="$effective_parallel_binary"
+fi
+
+effective_bats_command="${BATS_COMMAND:-bats}"
+if ! command_available "$effective_bats_command"; then
+  echo "Error: BATS executable '$effective_bats_command' is unavailable; run 'mise install'." >&2
+  exit 127
+fi
+
+bats_args=(--print-output-on-failure)
+if [ "$effective_jobs" -gt 1 ]; then
+  if ! command_available "$effective_parallel_binary"; then
+    echo "Error: BATS parallel runner '$effective_parallel_binary' is unavailable for $effective_jobs jobs; run 'mise install' or use --jobs 1." >&2
+    exit 127
+  fi
+  if ! $has_within_file_override; then
+    # BATS 1.13 polls its within-file semaphore once per second. Keep each file
+    # serial and let Rush schedule independent files without that delay.
+    bats_args+=(--no-parallelize-within-files)
+  fi
+  printf 'BATS parallelism: %s jobs across files via %s\n' "$effective_jobs" "$effective_parallel_binary"
+else
+  printf 'BATS parallelism: serial\n'
+fi
+
+bats_args+=("${resolved[@]}")
+if [ -n "$BATS_COMMAND" ]; then
+  exec "$BATS_COMMAND" "${bats_args[@]}"
+fi
+exec bats "${bats_args[@]}"
