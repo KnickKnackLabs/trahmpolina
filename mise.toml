@@ -7,6 +7,7 @@ experimental = true
 shiv = "https://github.com/KnickKnackLabs/vfox-shiv"
 
 [tools]
+"aqua:shenwei356/rush" = "0.9.0"
 bats = "1.13.0"
 gum = "0.17.0"
 "shiv:codebase" = "0.3"
@@ -16,7 +17,6 @@ gum = "0.17.0"
 lint = [
   "mise-settings",
   "bats-test-helper",
-  "bats-test-task",
   "mcr-scope",
   "or-true",
   "shellcheck",
