@@ -28,3 +28,15 @@ load test_helper
   [ "$status" -eq 0 ]
   [[ "$output" == *"pre-commit"* ]]
 }
+
+@test "public tasks provide examples through their real help" {
+  while IFS= read -r task_file; do
+    relative_path="${task_file#"$REPO_DIR/.mise/tasks/"}"
+    task_name="${relative_path%/_default}"
+    task_name="${task_name//\//:}"
+
+    run template "$task_name" --help
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Examples:"* ]]
+  done < <(find "$REPO_DIR/.mise/tasks" -type f -print | sort)
+}
