@@ -7,7 +7,7 @@
 Copy the boring parts so the interesting parts start sooner.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 16](https://img.shields.io/badge/tests-16-brightgreen?style=flat)](test/)
+[![tests: 17](https://img.shields.io/badge/tests-17-brightgreen?style=flat)](test/)
 ![lints: 8](https://img.shields.io/badge/lints-8-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -132,7 +132,7 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **16 tests** and **2 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **17 tests** and **2 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 
