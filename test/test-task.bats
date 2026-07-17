@@ -43,6 +43,10 @@ arg_count() {
   awk -F= -v expected="$expected" '$1 == "arg" && substr($0, 5) == expected { count++ } END { print count + 0 }' "$BATS_LOG"
 }
 
+logged_arguments() {
+  sed -n 's/^arg=//p' "$BATS_LOG"
+}
+
 @test "test task defaults to four Rush jobs across files" {
   run template test skeleton --filter doctor
   [ "$status" -eq 0 ]
@@ -129,6 +133,36 @@ arg_count() {
   [ "$status" -eq 2 ]
   [[ "$output" == *"must be a positive integer"* ]]
   [ ! -e "$BATS_LOG" ]
+}
+
+@test "missing job override fails before BATS" {
+  run template test --jobs
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"--jobs requires a positive integer"* ]]
+  [ ! -e "$BATS_LOG" ]
+}
+
+@test "filter values that resemble parallel flags remain filter values" {
+  run template test --filter --jobs skeleton
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"4 jobs across files"* ]]
+  [ "$(logged_arguments)" = "$(printf '%s\n' \
+    --print-output-on-failure \
+    --no-parallelize-within-files \
+    --filter \
+    --jobs \
+    "$REPO_DIR/test/skeleton.bats")" ]
+}
+
+@test "filter values that match suite names are not resolved as targets" {
+  run template test --filter skeleton test-task
+  [ "$status" -eq 0 ]
+  [ "$(logged_arguments)" = "$(printf '%s\n' \
+    --print-output-on-failure \
+    --no-parallelize-within-files \
+    --filter \
+    skeleton \
+    "$REPO_DIR/test/test-task.bats")" ]
 }
 
 @test "canonical task runs separate BATS files concurrently" {

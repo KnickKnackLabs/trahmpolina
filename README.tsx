@@ -131,11 +131,12 @@ const scaffold = [
   ["mise.toml", "tools, settings, and codebase lint config"],
   ["README.tsx", "programmable README source"],
   ["CONTRIBUTING.md", "repo-entry orientation surface"],
-  [".mise/tasks/test", "canonical BATS runner"],
+  [".mise/tasks/test", "public test-task adapter"],
   [".mise/tasks/doctor", "local health check plus hook hint"],
+  ["libexec/test", "canonical BATS command workflow"],
   [".github/workflows/test.yml", "Ubuntu/macOS CI"],
   ["test/", "BATS smoke coverage"],
-  ["lib/", "shared runtime code starts here when needed"],
+  ["lib/", "shared sourced code starts here when needed"],
 ];
 
 const readme = (
@@ -229,6 +230,11 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
           <Cell><Code>test/test_helper.bash</Code></Cell>
         </TableRow>
         <TableRow>
+          <Cell>Readable command flow</Cell>
+          <Cell>The thin public task delegates its nontrivial workflow to a command-shaped internal executable.</Cell>
+          <Cell><Code>libexec/test</Code></Cell>
+        </TableRow>
+        <TableRow>
           <Cell>Parallel BATS</Cell>
           <Cell>Rush schedules independent test files concurrently, with explicit job and serial overrides.</Cell>
           <Cell><Code>.mise/tasks/test</Code></Cell>
@@ -297,8 +303,9 @@ mise run test --jobs 1                # serial debugging`}</CodeBlock>
         <Item>Rename <Code>PROJECT</Code> in <Code>README.tsx</Code>.</Item>
         <Item>Rewrite this README around the actual tool, but keep the dynamic counters if they help.</Item>
         <Item>Replace <Code>CONTRIBUTING.md</Code> with repo-specific orientation.</Item>
-        <Item>Add real task files under <Code>.mise/tasks/</Code>; use <Code>$MISE_CONFIG_ROOT</Code> inside tasks only.</Item>
-        <Item>Put shared Bash helpers in <Code>lib/</Code> only once multiple tasks need them.</Item>
+        <Item>Keep public <Code>.mise/tasks</Code> files focused on CLI metadata and argument translation.</Item>
+        <Item>Put a nontrivial command workflow under <Code>libexec/</Code> with a discoverable <Code>main</Code> function.</Item>
+        <Item>Put sourced Bash under <Code>lib/</Code> only when multiple commands share one domain contract.</Item>
         <Item>If the installed tool resolves caller-relative paths, read the shiv-provided <Code>{"<PACKAGE>_CALLER_PWD"}</Code> variable, not generic <Code>CALLER_PWD</Code>.</Item>
         <Item>Keep parallel tests isolated per test/process, or opt the suite into serial execution until shared state is removed.</Item>
       </List>

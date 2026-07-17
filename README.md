@@ -7,8 +7,8 @@
 Copy the boring parts so the interesting parts start sooner.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 13](https://img.shields.io/badge/tests-13-brightgreen?style=flat)](test/)
-![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
+[![tests: 16](https://img.shields.io/badge/tests-16-brightgreen?style=flat)](test/)
+![lints: 8](https://img.shields.io/badge/lints-8-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
 
@@ -50,14 +50,15 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
 
 ## Goodies baked in
 
-| Goodie            | Why it exists                                                                                            | Where                        |
-| ----------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| Generated README  | TSX can count tests, list tasks, and keep docs honest in CI.                                             | `README.tsx`                 |
-| Doctor hook check | Local pre-commit hooks are clone-local, so the repo can report them without pretending they are tracked. | `mise run doctor`            |
-| Convention lints  | Best-practice drift gets caught as code, not folklore.                                                   | `[_.codebase].lint`          |
-| Real test path    | BATS tests call tasks through `mise run`, not raw scripts.                                               | `test/test_helper.bash`      |
-| Parallel BATS     | Rush schedules independent test files concurrently, with explicit job and serial overrides.              | `.mise/tasks/test`           |
-| Mac + Linux CI    | Bash and tooling differences show up before merge.                                                       | ubuntu-latest + macos-latest |
+| Goodie                | Why it exists                                                                                            | Where                        |
+| --------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| Generated README      | TSX can count tests, list tasks, and keep docs honest in CI.                                             | `README.tsx`                 |
+| Doctor hook check     | Local pre-commit hooks are clone-local, so the repo can report them without pretending they are tracked. | `mise run doctor`            |
+| Convention lints      | Best-practice drift gets caught as code, not folklore.                                                   | `[_.codebase].lint`          |
+| Real test path        | BATS tests call tasks through `mise run`, not raw scripts.                                               | `test/test_helper.bash`      |
+| Readable command flow | The thin public task delegates its nontrivial workflow to a command-shaped internal executable.          | `libexec/test`               |
+| Parallel BATS         | Rush schedules independent test files concurrently, with explicit job and serial overrides.              | `.mise/tasks/test`           |
+| Mac + Linux CI        | Bash and tooling differences show up before merge.                                                       | ubuntu-latest + macos-latest |
 
 ## Scaffold inventory
 
@@ -66,11 +67,12 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
 | `mise.toml`                  | ✓      | tools, settings, and codebase lint config   |
 | `README.tsx`                 | ✓      | programmable README source                  |
 | `CONTRIBUTING.md`            | ✓      | repo-entry orientation surface              |
-| `.mise/tasks/test`           | ✓      | canonical BATS runner                       |
+| `.mise/tasks/test`           | ✓      | public test-task adapter                    |
 | `.mise/tasks/doctor`         | ✓      | local health check plus hook hint           |
+| `libexec/test`               | ✓      | canonical BATS command workflow             |
 | `.github/workflows/test.yml` | ✓      | Ubuntu/macOS CI                             |
 | `test/`                      | ✓      | BATS smoke coverage                         |
-| `lib/`                       | ✓      | shared runtime code starts here when needed |
+| `lib/`                       | ✓      | shared sourced code starts here when needed |
 
 ## Tasks
 
@@ -97,10 +99,11 @@ Parallel suites must isolate mutable state per test and process. Use `$BATS_TEST
 1. Rename `PROJECT` in `README.tsx`.
 2. Rewrite this README around the actual tool, but keep the dynamic counters if they help.
 3. Replace `CONTRIBUTING.md` with repo-specific orientation.
-4. Add real task files under `.mise/tasks/`; use `$MISE_CONFIG_ROOT` inside tasks only.
-5. Put shared Bash helpers in `lib/` only once multiple tasks need them.
-6. If the installed tool resolves caller-relative paths, read the shiv-provided `<PACKAGE>_CALLER_PWD` variable, not generic `CALLER_PWD`.
-7. Keep parallel tests isolated per test/process, or opt the suite into serial execution until shared state is removed.
+4. Keep public `.mise/tasks` files focused on CLI metadata and argument translation.
+5. Put a nontrivial command workflow under `libexec/` with a discoverable `main` function.
+6. Put sourced Bash under `lib/` only when multiple commands share one domain contract.
+7. If the installed tool resolves caller-relative paths, read the shiv-provided `<PACKAGE>_CALLER_PWD` variable, not generic `CALLER_PWD`.
+8. Keep parallel tests isolated per test/process, or opt the suite into serial execution until shared state is removed.
 
 <details>
 <summary><b>Current convention checks</b></summary>
@@ -110,7 +113,6 @@ This template currently asks [codebase](https://github.com/KnickKnackLabs/codeba
 ```
 mise-settings
 bats-test-helper
-bats-test-task
 mcr-scope
 or-true
 shellcheck
@@ -130,7 +132,7 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **13 tests** and **2 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **16 tests** and **2 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 
