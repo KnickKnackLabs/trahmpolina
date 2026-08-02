@@ -7,7 +7,7 @@
 Copy the boring parts so the interesting parts start sooner.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 17](https://img.shields.io/badge/tests-17-brightgreen?style=flat)](test/)
+[![tests: 18](https://img.shields.io/badge/tests-18-brightgreen?style=flat)](test/)
 ![lints: 8](https://img.shields.io/badge/lints-8-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -57,7 +57,7 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
 | Convention lints      | Best-practice drift gets caught as code, not folklore.                                                   | `[_.codebase].lint`          |
 | Real test path        | BATS tests call tasks through `mise run`, not raw scripts.                                               | `test/test_helper.bash`      |
 | Readable command flow | The thin public task delegates its nontrivial workflow to a command-shaped internal executable.          | `libexec/test`               |
-| Parallel BATS         | Rush schedules independent test files concurrently, with explicit job and serial overrides.              | `.mise/tasks/test`           |
+| Parallel BATS         | The KKL Bats fork and Rush schedule isolated tests concurrently across and within files.                 | `.mise/tasks/test`           |
 | Mac + Linux CI        | Bash and tooling differences show up before merge.                                                       | ubuntu-latest + macos-latest |
 
 ## Scaffold inventory
@@ -83,7 +83,7 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
 
 ## Parallel tests
 
-The canonical test task uses [Rush](https://github.com/shenwei356/rush) to run separate `.bats` files with a measured four-job default. Tests inside one file remain serial because BATS 1.13 has expensive within-file semaphore polling.
+The canonical test task uses the [KKL-maintained Bats fork](https://github.com/KnickKnackLabs/bats-core) with [Rush](https://github.com/shenwei356/rush) and a measured four-job default. Isolated tests can run concurrently across separate files and within one file.
 
 ```bash
 mise run test                         # measured four-job default
@@ -132,7 +132,7 @@ readme build --check
 git diff --check
 ```
 
-The starter suite currently has **17 tests** and **2 public tasks**. Those numbers are read from the repo at README build time.
+The starter suite currently has **18 tests** and **2 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

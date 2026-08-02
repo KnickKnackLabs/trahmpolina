@@ -38,9 +38,9 @@ The hook lives under `.git/hooks/`, so it is intentionally not tracked by the re
 
 ## Parallel test contract
 
-`mise run test` uses Rush to schedule separate `.bats` files with a measured
-four-job default. Tests inside each file remain serial because BATS 1.13's
-within-file semaphore polling is disproportionately slow for short tests.
+`mise run test` uses the KKL-maintained Bats fork and Rush with a measured
+four-job default. Isolated tests can run concurrently across separate `.bats`
+files and within one file.
 
 Override the measured default when needed:
 

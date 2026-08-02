@@ -12,7 +12,6 @@ default_parallel_command="${RUSH_COMMAND:-rush}"
 
 resolved_arguments=()
 has_test_target=false
-has_within_file_override=false
 cli_jobs=""
 cli_parallel_command=""
 
@@ -76,10 +75,6 @@ resolve_arguments() {
     fi
 
     case "$argument" in
-      --no-parallelize-within-files)
-        has_within_file_override=true
-        resolved_arguments+=("$argument")
-        ;;
       -*) resolved_arguments+=("$argument") ;;
       *) append_test_target "$argument" ;;
     esac
@@ -137,12 +132,7 @@ run_bats() {
   local bats_arguments=(--print-output-on-failure)
 
   if [ "$effective_jobs" -gt 1 ]; then
-    if ! $has_within_file_override; then
-      # BATS 1.13 polls its within-file semaphore once per second. Keep each
-      # file serial and let Rush schedule independent files without that delay.
-      bats_arguments+=(--no-parallelize-within-files)
-    fi
-    printf 'BATS parallelism: %s jobs across files via %s\n' \
+    printf 'BATS parallelism: %s jobs via %s\n' \
       "$effective_jobs" "$effective_parallel_command"
   else
     printf 'BATS parallelism: serial\n'
