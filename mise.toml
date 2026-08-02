@@ -2,13 +2,14 @@
 quiet = true
 task_output = "interleave"
 experimental = true
+aqua.registries = ["https://github.com/KnickKnackLabs/bats-core"]
 
 [plugins]
 shiv = "https://github.com/KnickKnackLabs/vfox-shiv"
 
 [tools]
+"aqua:KnickKnackLabs/bats-core" = "1.14.0-kkl.1"
 "aqua:shenwei356/rush" = "0.9.0"
-bats = "1.13.0"
 gum = "0.17.0"
 "shiv:codebase" = "0.3"
 "shiv:readme" = "0.3"

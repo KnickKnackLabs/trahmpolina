@@ -47,13 +47,13 @@ logged_arguments() {
   sed -n 's/^arg=//p' "$BATS_LOG"
 }
 
-@test "test task defaults to four Rush jobs across files" {
+@test "test task defaults to four Rush jobs" {
   run template test skeleton --filter doctor
   [ "$status" -eq 0 ]
-  [[ "$output" == *"4 jobs across files"* ]]
+  [[ "$output" == *"4 jobs via"* ]]
   [ "$(log_value jobs)" = "4" ]
   [ "$(log_value runner)" = "$MOCK_DIR/rush" ]
-  [ "$(arg_count --no-parallelize-within-files)" -eq 1 ]
+  [ "$(arg_count --no-parallelize-within-files)" -eq 0 ]
   [ "$(arg_count "$REPO_DIR/test/skeleton.bats")" -eq 1 ]
   [ "$(arg_count --filter)" -eq 1 ]
   [ "$(arg_count doctor)" -eq 1 ]
@@ -62,11 +62,11 @@ logged_arguments() {
 @test "explicit jobs override is forwarded once" {
   run template test --jobs 3 skeleton
   [ "$status" -eq 0 ]
-  [[ "$output" == *"3 jobs across files"* ]]
+  [[ "$output" == *"3 jobs via"* ]]
   [ "$(log_value jobs)" = "" ]
   [ "$(arg_count --jobs)" -eq 1 ]
   [ "$(arg_count 3)" -eq 1 ]
-  [ "$(arg_count --no-parallelize-within-files)" -eq 1 ]
+  [ "$(arg_count --no-parallelize-within-files)" -eq 0 ]
 }
 
 @test "environment jobs override the detected default" {
@@ -74,7 +74,7 @@ logged_arguments() {
 
   run template test skeleton
   [ "$status" -eq 0 ]
-  [[ "$output" == *"2 jobs across files"* ]]
+  [[ "$output" == *"2 jobs via"* ]]
   [ "$(log_value jobs)" = "2" ]
   [ "$(arg_count --jobs)" -eq 0 ]
 }
@@ -145,10 +145,9 @@ logged_arguments() {
 @test "filter values that resemble parallel flags remain filter values" {
   run template test --filter --jobs skeleton
   [ "$status" -eq 0 ]
-  [[ "$output" == *"4 jobs across files"* ]]
+  [[ "$output" == *"4 jobs via"* ]]
   [ "$(logged_arguments)" = "$(printf '%s\n' \
     --print-output-on-failure \
-    --no-parallelize-within-files \
     --filter \
     --jobs \
     "$REPO_DIR/test/skeleton.bats")" ]
@@ -159,7 +158,6 @@ logged_arguments() {
   [ "$status" -eq 0 ]
   [ "$(logged_arguments)" = "$(printf '%s\n' \
     --print-output-on-failure \
-    --no-parallelize-within-files \
     --filter \
     skeleton \
     "$REPO_DIR/test/test-task.bats")" ]
@@ -208,5 +206,47 @@ BATS
     bash -c 'cd "$1" && mise run -q test "$2"' _ "$REPO_DIR" "$probe_dir"
 
   [ "$status" -eq 0 ]
-  [[ "$output" == *"jobs across files"* ]]
+  [[ "$output" == *"jobs via"* ]]
+}
+
+@test "canonical task runs tests within one BATS file concurrently" {
+  probe_dir="$BATS_TEST_TMPDIR/within-file-probe"
+  barrier_dir="$BATS_TEST_TMPDIR/within-file-barrier"
+  mkdir -p "$probe_dir" "$barrier_dir"
+
+  test_keyword='@test'
+  {
+    printf '%s\n' '#!/usr/bin/env bats'
+    printf '%s\n' "$test_keyword \"first test observes second test\" {"
+    cat <<'BATS'
+  touch "$PROBE_DIR/one"
+  for _ in {1..50}; do
+    [ ! -e "$PROBE_DIR/two" ] || return 0
+    sleep 0.05
+  done
+  false
+}
+BATS
+    printf '%s\n' "$test_keyword \"second test observes first test\" {"
+    cat <<'BATS'
+  touch "$PROBE_DIR/two"
+  for _ in {1..50}; do
+    [ ! -e "$PROBE_DIR/one" ] || return 0
+    sleep 0.05
+  done
+  false
+}
+BATS
+  } > "$probe_dir/within-file.bats"
+
+  run env -i \
+    HOME="$HOME" \
+    PATH="$PATH" \
+    TMPDIR="${TMPDIR:-/tmp}" \
+    MISE_TRUSTED_CONFIG_PATHS="$REPO_DIR" \
+    PROBE_DIR="$barrier_dir" \
+    bash -c 'cd "$1" && mise run -q test "$2"' _ "$REPO_DIR" "$probe_dir"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"jobs via"* ]]
 }

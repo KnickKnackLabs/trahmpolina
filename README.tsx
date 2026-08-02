@@ -236,7 +236,7 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
         </TableRow>
         <TableRow>
           <Cell>Parallel BATS</Cell>
-          <Cell>Rush schedules independent test files concurrently, with explicit job and serial overrides.</Cell>
+          <Cell>The KKL Bats fork and Rush schedule isolated tests concurrently across and within files.</Cell>
           <Cell><Code>.mise/tasks/test</Code></Cell>
         </TableRow>
         <TableRow>
@@ -281,11 +281,11 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
 
     <Section title="Parallel tests">
       <Paragraph>
-        {"The canonical test task uses "}
+        {"The canonical test task uses the "}
+        <Link href="https://github.com/KnickKnackLabs/bats-core">KKL-maintained Bats fork</Link>
+        {" with "}
         <Link href="https://github.com/shenwei356/rush">Rush</Link>
-        {" to run separate "}
-        <Code>.bats</Code>
-        {" files with a measured four-job default. Tests inside one file remain serial because BATS 1.13 has expensive within-file semaphore polling."}
+        {" and a measured four-job default. Isolated tests can run concurrently across separate files and within one file."}
       </Paragraph>
       <CodeBlock lang="bash">{`mise run test                         # measured four-job default
 mise run test --jobs 4                # explicit job count
