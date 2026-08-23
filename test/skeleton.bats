@@ -18,16 +18,16 @@ load test_helper
 }
 
 @test "public test task owns the complete BATS runner" {
-  run rg -n '^    exec bats ' "$REPO_DIR/.mise/tasks/test"
+  run grep -n '^    exec bats ' "$REPO_DIR/.mise/tasks/test"
   [ "$status" -eq 0 ]
   [ ! -e "$REPO_DIR/libexec/test" ]
 }
 
 @test "Codebase uses the stable template name and evolving all group" {
-  run rg -n '^name = "template"$' "$REPO_DIR/mise.toml"
+  run grep -n -x -F 'name = "template"' "$REPO_DIR/mise.toml"
   [ "$status" -eq 0 ]
 
-  run rg -n '^lint = \["@all"\]$' "$REPO_DIR/mise.toml"
+  run grep -n -x -F 'lint = ["@all"]' "$REPO_DIR/mise.toml"
   [ "$status" -eq 0 ]
 }
 
