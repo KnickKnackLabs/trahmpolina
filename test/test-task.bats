@@ -197,13 +197,8 @@ BATS
 BATS
   } > "$probe_dir/two.bats"
 
-  run env -i \
-    HOME="$HOME" \
-    PATH="$PATH" \
-    TMPDIR="${TMPDIR:-/tmp}" \
-    MISE_TRUSTED_CONFIG_PATHS="$REPO_DIR" \
-    PROBE_DIR="$barrier_dir" \
-    bash -c 'cd "$1" && mise run -q test "$2"' _ "$REPO_DIR" "$probe_dir"
+  export PROBE_DIR="$barrier_dir"
+  run template_isolated test "$probe_dir"
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"jobs via"* ]]
@@ -239,13 +234,8 @@ BATS
 BATS
   } > "$probe_dir/within-file.bats"
 
-  run env -i \
-    HOME="$HOME" \
-    PATH="$PATH" \
-    TMPDIR="${TMPDIR:-/tmp}" \
-    MISE_TRUSTED_CONFIG_PATHS="$REPO_DIR" \
-    PROBE_DIR="$barrier_dir" \
-    bash -c 'cd "$1" && mise run -q test "$2"' _ "$REPO_DIR" "$probe_dir"
+  export PROBE_DIR="$barrier_dir"
+  run template_isolated test "$probe_dir"
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"jobs via"* ]]
