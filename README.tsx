@@ -131,9 +131,8 @@ const scaffold = [
   ["mise.toml", "tools, settings, and codebase lint config"],
   ["README.tsx", "programmable README source"],
   ["CONTRIBUTING.md", "repo-entry orientation surface"],
-  [".mise/tasks/test", "public test-task adapter"],
+  [".mise/tasks/test", "complete public BATS command workflow"],
   [".mise/tasks/doctor", "local health check plus hook hint"],
-  ["libexec/test", "canonical BATS command workflow"],
   [".github/workflows/test.yml", "Ubuntu/macOS CI"],
   ["test/", "BATS smoke coverage"],
   ["lib/", "shared sourced code starts here when needed"],
@@ -153,7 +152,7 @@ const readme = (
       <Badges>
         <Badge label="shape" value="mise + BATS" color="4EAA25" logo="gnubash" logoColor="white" />
         <Badge label="tests" value={`${testCount}`} color="brightgreen" href="test/" />
-        <Badge label="lints" value={`${lints.length}`} color="blue" />
+        <Badge label="lints" value={lints.join(" + ") || "none"} color="blue" />
         <Badge label="README" value="TSX" color="f472b6" />
         <Badge label="License" value={PROJECT.license} color="blue" href="LICENSE" />
       </Badges>
@@ -230,9 +229,9 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
           <Cell><Code>test/test_helper.bash</Code></Cell>
         </TableRow>
         <TableRow>
-          <Cell>Readable command flow</Cell>
-          <Cell>The thin public task delegates its nontrivial workflow to a command-shaped internal executable.</Cell>
-          <Cell><Code>libexec/test</Code></Cell>
+          <Cell>Public test workflow</Cell>
+          <Cell>The complete BATS runner stays visible and testable at the public task boundary.</Cell>
+          <Cell><Code>.mise/tasks/test</Code></Cell>
         </TableRow>
         <TableRow>
           <Cell>Parallel BATS</Cell>
@@ -303,9 +302,8 @@ mise run test --jobs 1                # serial debugging`}</CodeBlock>
         <Item>Rename <Code>PROJECT</Code> in <Code>README.tsx</Code>.</Item>
         <Item>Rewrite this README around the actual tool, but keep the dynamic counters if they help.</Item>
         <Item>Replace <Code>CONTRIBUTING.md</Code> with repo-specific orientation.</Item>
-        <Item>Keep public <Code>.mise/tasks</Code> files focused on CLI metadata and argument translation.</Item>
-        <Item>Put a nontrivial command workflow under <Code>libexec/</Code> with a discoverable <Code>main</Code> function.</Item>
-        <Item>Put sourced Bash under <Code>lib/</Code> only when multiple commands share one domain contract.</Item>
+        <Item>Keep the complete test runner in <Code>.mise/tasks/test</Code> so the public task is the tested workflow.</Item>
+        <Item>Keep other public <Code>.mise/tasks</Code> readable and command-shaped; extract sourced Bash under <Code>lib/</Code> only when multiple commands share one domain contract.</Item>
         <Item>If the installed tool resolves caller-relative paths, read the shiv-provided <Code>{"<PACKAGE>_CALLER_PWD"}</Code> variable, not generic <Code>CALLER_PWD</Code>.</Item>
         <Item>Keep parallel tests isolated per test/process, or opt the suite into serial execution until shared state is removed.</Item>
       </List>

@@ -11,9 +11,8 @@ template/
 ├── README.tsx             # Source for generated README.md
 ├── README.md              # Generated; keep in sync with README.tsx
 ├── CONTRIBUTING.md        # Repo orientation surface
-├── .mise/tasks/test       # Public task metadata and argument translation
+├── .mise/tasks/test       # Complete public BATS command workflow
 ├── .mise/tasks/doctor     # Local health checks + optional hook status
-├── libexec/test           # Canonical BATS command workflow
 ├── lib/                   # Sourced code shared by multiple commands
 └── test/                  # BATS tests and helpers
 ```
@@ -70,9 +69,8 @@ CI also checks that `README.md` matches `README.tsx`.
 
 1. Rename the project constants in `README.tsx`.
 1. Replace this guide with codebase-specific orientation.
-1. Keep public `.mise/tasks` files focused on CLI metadata and argument translation.
-1. Put a nontrivial command's readable workflow under `libexec/` with a discoverable `main` function.
-1. Add sourced code under `lib/` only when multiple commands share one domain contract.
+1. Keep the complete test runner in `.mise/tasks/test` so the public task is the tested workflow.
+1. Keep other public `.mise/tasks` readable and command-shaped; extract sourced code under `lib/` only when multiple commands share one domain contract.
 1. Keep tests calling tasks through `mise run`, not by invoking `.mise/tasks/*` or `libexec/*` directly.
 1. If the tool resolves caller-relative paths after shiv install, use the package-scoped `<PACKAGE>_CALLER_PWD` variable.
 1. Keep parallel tests isolated per test/process, or use one job until shared state is removed.
