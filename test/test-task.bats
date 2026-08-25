@@ -89,6 +89,19 @@ logged_arguments() {
   [ "$(arg_count --no-parallelize-within-files)" -eq 0 ]
 }
 
+@test "option values cannot suppress the whitespace transport fallback" {
+  target="$BATS_TEST_TMPDIR/parallel target/fixture file.bats"
+  mkdir -p "$(dirname "$target")"
+  printf '%s
+' '#!/usr/bin/env bats' > "$target"
+
+  run template test "$target" --filter --no-parallelize-across-files
+  [ "$status" -eq 0 ]
+  [ "$(arg_count --no-parallelize-across-files)" -eq 2 ]
+  [ "$(arg_count --no-parallelize-within-files)" -eq 0 ]
+  [ "$(arg_count "$target")" -eq 1 ]
+}
+
 @test "CLI serial opt-out does not require Rush" {
   export RUSH_COMMAND="$MOCK_DIR/missing-rush"
 
