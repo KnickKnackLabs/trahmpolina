@@ -18,7 +18,7 @@ load test_helper
 }
 
 @test "public test task owns the complete BATS runner" {
-  run grep -n '^    exec bats ' "$REPO_DIR/.mise/tasks/test"
+  run grep -n '^exec bats ' "$REPO_DIR/.mise/tasks/test"
   [ "$status" -eq 0 ]
   [ ! -e "$REPO_DIR/libexec/test" ]
 }
