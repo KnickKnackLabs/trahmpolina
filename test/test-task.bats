@@ -47,12 +47,13 @@ logged_arguments() {
   sed -n 's/^arg=//p' "$BATS_LOG"
 }
 
-@test "test task defaults to four Rush jobs" {
+@test "test task defaults to four Rush jobs without transport overrides" {
   run template test skeleton --filter doctor
   [ "$status" -eq 0 ]
   [[ "$output" == *"4 jobs via"* ]]
   [ "$(log_value jobs)" = "4" ]
   [ "$(log_value runner)" = "$MOCK_DIR/rush" ]
+  [ "$(arg_count --no-parallelize-across-files)" -eq 0 ]
   [ "$(arg_count --no-parallelize-within-files)" -eq 0 ]
   [ "$(arg_count "$REPO_DIR/test/skeleton.bats")" -eq 1 ]
   [ "$(arg_count --filter)" -eq 1 ]
@@ -89,7 +90,7 @@ logged_arguments() {
   [ "$(arg_count --no-parallelize-within-files)" -eq 0 ]
 }
 
-@test "option values cannot suppress the whitespace transport fallback" {
+@test "option values that resemble parallel flags remain option values" {
   target="$BATS_TEST_TMPDIR/parallel target/fixture file.bats"
   mkdir -p "$(dirname "$target")"
   printf '%s
@@ -97,7 +98,7 @@ logged_arguments() {
 
   run template test "$target" --filter --no-parallelize-across-files
   [ "$status" -eq 0 ]
-  [ "$(arg_count --no-parallelize-across-files)" -eq 2 ]
+  [ "$(arg_count --no-parallelize-across-files)" -eq 1 ]
   [ "$(arg_count --no-parallelize-within-files)" -eq 0 ]
   [ "$(arg_count "$target")" -eq 1 ]
 }
