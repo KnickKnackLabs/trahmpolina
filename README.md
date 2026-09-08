@@ -7,7 +7,7 @@
 Copy the boring parts so the interesting parts start sooner.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 12](https://img.shields.io/badge/tests-12-brightgreen?style=flat)](test/)
+[![tests: 23](https://img.shields.io/badge/tests-23-brightgreen?style=flat)](test/)
 ![lints: @all](https://img.shields.io/badge/lints-%40all-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -36,7 +36,7 @@ git init -b main
 
 mise trust
 mise install
-mise run test
+mise run validate
 mise run doctor
 
 # Optional local safety net: installs .git/hooks/pre-commit.d/codebase
@@ -50,35 +50,38 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
 
 ## Goodies baked in
 
-| Goodie               | Why it exists                                                                                            | Where                        |
-| -------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| Generated README     | TSX can count tests, list tasks, and keep docs honest in CI.                                             | `README.tsx`                 |
-| Doctor hook check    | Local pre-commit hooks are clone-local, so the repo can report them without pretending they are tracked. | `mise run doctor`            |
-| Convention lints     | Best-practice drift gets caught as code, not folklore.                                                   | `[_.codebase].lint`          |
-| Real test path       | BATS tests call tasks through `mise run`, not raw scripts.                                               | `test/test_helper.bash`      |
-| Public test workflow | The complete BATS runner stays visible and testable at the public task boundary.                         | `.mise/tasks/test`           |
-| Parallel BATS        | The KKL Bats fork and Rush schedule isolated tests concurrently across and within files.                 | `.mise/tasks/test`           |
-| Mac + Linux CI       | Bash and tooling differences show up before merge.                                                       | ubuntu-latest + macos-latest |
+| Goodie                        | Why it exists                                                                                                                 | Where                        |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| Generated README              | TSX can count tests, list tasks, and keep docs honest in CI.                                                                  | `README.tsx`                 |
+| Doctor hook check             | Local pre-commit hooks are clone-local, so the repo can report them without pretending they are tracked.                      | `mise run doctor`            |
+| Convention lints              | Best-practice drift gets caught as code, not folklore.                                                                        | `[_.codebase].lint`          |
+| Real test path                | BATS tests call tasks through `mise run`, not raw scripts.                                                                    | `test/test_helper.bash`      |
+| Public test workflow          | The complete BATS runner stays visible and testable at the public task boundary.                                              | `.mise/tasks/test`           |
+| Reference validation workflow | One gate owns explicit check ordering, private evidence, interruption, and the final verdict. Local and CI use the same path. | `.mise/tasks/validate`       |
+| Parallel BATS                 | The KKL Bats fork and Rush schedule isolated tests concurrently across and within files.                                      | `.mise/tasks/test`           |
+| Mac + Linux CI                | Bash and tooling differences show up before merge.                                                                            | ubuntu-latest + macos-latest |
 
 ## Scaffold inventory
 
-| Path                         | Status | Purpose                                     |
-| ---------------------------- | ------ | ------------------------------------------- |
-| `mise.toml`                  | ✓      | tools, settings, and codebase lint config   |
-| `README.tsx`                 | ✓      | programmable README source                  |
-| `CONTRIBUTING.md`            | ✓      | repo-entry orientation surface              |
-| `.mise/tasks/test`           | ✓      | complete public BATS command workflow       |
-| `.mise/tasks/doctor`         | ✓      | local health check plus hook hint           |
-| `.github/workflows/test.yml` | ✓      | Ubuntu/macOS CI                             |
-| `test/`                      | ✓      | BATS smoke coverage                         |
-| `lib/`                       | ✓      | shared sourced code starts here when needed |
+| Path                         | Status | Purpose                                               |
+| ---------------------------- | ------ | ----------------------------------------------------- |
+| `mise.toml`                  | ✓      | tools, settings, and codebase lint config             |
+| `README.tsx`                 | ✓      | programmable README source                            |
+| `CONTRIBUTING.md`            | ✓      | repo-entry orientation surface                        |
+| `.mise/tasks/test`           | ✓      | complete public BATS command workflow                 |
+| `.mise/tasks/validate`       | ✓      | aggregate validation, private logs, and final outcome |
+| `.mise/tasks/doctor`         | ✓      | local health check plus hook hint                     |
+| `.github/workflows/test.yml` | ✓      | Ubuntu/macOS CI                                       |
+| `test/`                      | ✓      | BATS smoke coverage                                   |
+| `lib/`                       | ✓      | shared sourced code starts here when needed           |
 
 ## Tasks
 
-| Task              | Description                   |
-| ----------------- | ----------------------------- |
-| `mise run doctor` | Check local development setup |
-| `mise run test`   | Run BATS tests                |
+| Task                | Description                                                          |
+| ------------------- | -------------------------------------------------------------------- |
+| `mise run doctor`   | Check local development setup                                        |
+| `mise run test`     | Run BATS tests                                                       |
+| `mise run validate` | Run all validation checks with compact results and private full logs |
 
 ## Parallel tests
 
@@ -102,6 +105,7 @@ Parallel suites must isolate mutable state per test and process. Use `$BATS_TEST
 5. Keep other public `.mise/tasks` readable and command-shaped; extract sourced Bash under `lib/` only when multiple commands share one domain contract.
 6. If the installed tool resolves caller-relative paths, read the shiv-provided `<PACKAGE>_CALLER_PWD` variable, not generic `CALLER_PWD`.
 7. Keep parallel tests isolated per test/process, or opt the suite into serial execution until shared state is removed.
+8. Preserve the [validation ownership and evidence contracts](CONTRIBUTING.md#reference-validation-workflow) when adding checks, dependencies, or shared writes.
 
 <details>
 <summary><b>Current convention checks</b></summary>
@@ -117,13 +121,18 @@ This template currently asks [codebase](https://github.com/KnickKnackLabs/codeba
 ## Validation
 
 ```bash
-mise run test
-codebase lint "$PWD"
-readme build --check
-git diff --check
+mise run validate                      # compact results, private full logs
+mise run validate --verbose            # full output for ephemeral CI
+BATS_NUMBER_OF_PARALLEL_JOBS=1 mise run validate
 ```
 
-The starter suite currently has **12 tests** and **2 public tasks**. Those numbers are read from the repo at README build time.
+The gate runs tests, Codebase lint, generated-README verification, and whitespace checks. Those checks are independent and run serially; BATS/Rush still owns test parallelism. A failed check does not suppress its independent peers. Interruption stops later checks and contains the active process group.
+
+Every invocation prints its private log directory and one timed result per check. Full logs, command arguments, and per-check receipts remain there; failures include a bounded excerpt. The final `report.tsv` distinguishes passing checks from the whole-run outcome after cleanup. A partial run or cleanup failure cannot report overall success. Logs are private, not redacted; remove them when no longer needed.
+
+CI calls the same gate with `--verbose` so detailed failures survive in its masked job log. The explicit `ci_lint_gate` declaration tells Codebase that this tested aggregate owns lint; it is not automatic inspection of the task. Read the [adoption guide](CONTRIBUTING.md#reference-validation-workflow) for the report format, prerequisite example, concurrency ownership, process-group limits, and when shared writes require an exclusion boundary. The individual commands remain available for focused checks.
+
+The starter suite currently has **23 tests** and **3 public tasks**. Those numbers are read from the repo at README build time.
 
 <div align="center">
 

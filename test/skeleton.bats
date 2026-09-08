@@ -9,6 +9,7 @@ load test_helper
     README.md \
     CONTRIBUTING.md \
     .mise/tasks/test \
+    .mise/tasks/validate \
     .mise/tasks/doctor \
     .github/workflows/test.yml \
     lib/.gitkeep
@@ -40,6 +41,26 @@ load test_helper
   run template doctor
   [ "$status" -eq 0 ]
   [[ "$output" == *"pre-commit"* ]]
+}
+
+@test "doctor uses the selected Codebase for both lint and hook checks" {
+  local selected="$BATS_TEST_TMPDIR/selected-codebase"
+  local calls="$BATS_TEST_TMPDIR/codebase-calls"
+  cat > "$selected" <<'BASH'
+#!/usr/bin/env bash
+set -eu
+printf '%s\n' "$*" >> "$CODEBASE_CALLS"
+if [ "$1" = pre-commit ]; then exit 1; fi
+BASH
+  chmod +x "$selected"
+
+  CODEBASE="$selected" CODEBASE_CALLS="$calls" run template doctor
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"optional local hook missing"* ]]
+  run grep -x -F "lint $REPO_DIR" "$calls"
+  [ "$status" -eq 0 ]
+  run grep -x -F 'pre-commit --check' "$calls"
+  [ "$status" -eq 0 ]
 }
 
 @test "public tasks provide examples through their real help" {
