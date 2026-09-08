@@ -91,6 +91,9 @@ ordinary masked job log. The individual commands remain useful for focused work:
 `mise run test`, `codebase lint "$PWD"`, `readme build --check`, and
 `git diff --check`. `doctor` reports setup health, not aggregate acceptance.
 
+The aggregate-gate declaration requires **Codebase 0.5 or later**. A `0.4`
+tool pin will not pick up this feature.
+
 `[_.codebase].ci_lint_gate` explicitly declares `mise run validate --verbose` as
 this repository's lint-owning CI command. Codebase checks the complete CI step
 and its failure-propagation settings; it does not inspect or execute the task.
