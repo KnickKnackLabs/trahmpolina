@@ -4,10 +4,25 @@ type: plan
 status: done
 owner: kabir
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-09-08
 ---
 
 # Reference validation workflow
+
+## Outcome
+
+Landed through [Trahmpolina PR #17](https://github.com/KnickKnackLabs/trahmpolina/pull/17)
+at `02d25a4`. Released-tool local acceptance passed all 23 tests and 19 lint
+rules; [main CI](https://github.com/KnickKnackLabs/trahmpolina/actions/runs/34229727456)
+passed on Ubuntu and macOS. The required Codebase policy landed through
+[PR #149](https://github.com/KnickKnackLabs/codebase/pull/149) and was released
+as v0.5.0; Trahmpolina selects its `0.5` stream.
+
+Other repositories pinned to `0.4` do not automatically receive this feature.
+Adopters of `ci_lint_gate` need `0.5`; direct-lint repositories can remain on
+`0.4`. A broader consumer-pin inventory is deferred, not part of this completed
+reference implementation. The sections below retain the implementation and
+validation history rather than describing unfinished work.
 
 ## Purpose
 
@@ -87,14 +102,14 @@ replace the mise dispatcher. A macOS canonical-path assertion was corrected,
 and ineffective BATS negation assertions were replaced with expected-exit checks
 before accepting the lifecycle proof.
 
-The real aggregate ran all four checks. Its only remaining blocker is Codebase
-0.4.7's `lint:ci-lint-enforcement`: it deliberately requires a whole GitHub Actions
+The initial real aggregate ran all four checks. Its remaining blocker was
+Codebase 0.4.7's `lint:ci-lint-enforcement`, which required a whole GitHub Actions
 run step containing only direct `codebase lint` (or `mise exec -- codebase lint`).
-It does not follow public validation tasks, so the new shared local/CI gate is
-rejected even though its Codebase failure propagates. This also fails the
-existing doctor smoke because doctor correctly runs the same lint portfolio.
-All other convention rules pass after correcting Bash-3.2 array forms and
-annotating the valid generated-task root reference.
+That version did not follow public validation tasks, so it rejected the new
+shared local/CI gate even though Codebase failure propagated. This also failed
+the doctor smoke because doctor ran the same lint portfolio. All other
+convention rules passed after correcting Bash-3.2 array forms and annotating
+the valid generated-task root reference.
 
 Or subsequently approved the corresponding local Codebase change. It adds the
 explicit `[_.codebase].ci_lint_gate` declaration, retains direct lint by default,
