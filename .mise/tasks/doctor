@@ -4,6 +4,7 @@
 set -euo pipefail
 
 REPO_DIR="$MISE_CONFIG_ROOT"
+codebase_command="${CODEBASE:-codebase}"
 SEP='|'
 failures=0
 rows=()
@@ -38,15 +39,15 @@ else
   fail_check "README" "readme command not found; run mise install"
 fi
 
-if command -v codebase >/dev/null 2>&1; then
-  if lint_output=$(cd "$REPO_DIR" && codebase lint "$REPO_DIR" 2>&1); then
+if command -v "$codebase_command" >/dev/null 2>&1; then
+  if lint_output=$(cd "$REPO_DIR" && "$codebase_command" lint "$REPO_DIR" 2>&1); then
     add_row "codebase" "✓" "configured convention lints pass"
   else
     fail_check "codebase" "configured convention lints failed" "$lint_output"
   fi
 
   if git -C "$REPO_DIR" rev-parse --git-dir >/dev/null 2>&1; then
-    if (cd "$REPO_DIR" && codebase pre-commit --check >/dev/null 2>&1); then
+    if (cd "$REPO_DIR" && "$codebase_command" pre-commit --check >/dev/null 2>&1); then
       add_row "pre-commit" "✓" "codebase pre-commit hook is installed"
     else
       add_row "pre-commit" "!" "optional local hook missing; run codebase pre-commit"

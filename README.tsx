@@ -132,6 +132,7 @@ const scaffold = [
   ["README.tsx", "programmable README source"],
   ["CONTRIBUTING.md", "repo-entry orientation surface"],
   [".mise/tasks/test", "complete public BATS command workflow"],
+  [".mise/tasks/validate", "aggregate validation, private logs, and final outcome"],
   [".mise/tasks/doctor", "local health check plus hook hint"],
   [".github/workflows/test.yml", "Ubuntu/macOS CI"],
   ["test/", "BATS smoke coverage"],
@@ -189,7 +190,7 @@ git init -b main
 
 mise trust
 mise install
-mise run test
+mise run validate
 mise run doctor
 
 # Optional local safety net: installs .git/hooks/pre-commit.d/codebase
@@ -232,6 +233,11 @@ gh repo create KnickKnackLabs/my-tool --public --source=. --remote=origin --push
           <Cell>Public test workflow</Cell>
           <Cell>The complete BATS runner stays visible and testable at the public task boundary.</Cell>
           <Cell><Code>.mise/tasks/test</Code></Cell>
+        </TableRow>
+        <TableRow>
+          <Cell>Reference validation workflow</Cell>
+          <Cell>One gate owns explicit check ordering, private evidence, interruption, and the final verdict. Local and CI use the same path.</Cell>
+          <Cell><Code>.mise/tasks/validate</Code></Cell>
         </TableRow>
         <TableRow>
           <Cell>Parallel BATS</Cell>
@@ -306,6 +312,7 @@ mise run test --jobs 1                # serial debugging`}</CodeBlock>
         <Item>Keep other public <Code>.mise/tasks</Code> readable and command-shaped; extract sourced Bash under <Code>lib/</Code> only when multiple commands share one domain contract.</Item>
         <Item>If the installed tool resolves caller-relative paths, read the shiv-provided <Code>{"<PACKAGE>_CALLER_PWD"}</Code> variable, not generic <Code>CALLER_PWD</Code>.</Item>
         <Item>Keep parallel tests isolated per test/process, or opt the suite into serial execution until shared state is removed.</Item>
+        <Item>Preserve the <Link href="CONTRIBUTING.md#reference-validation-workflow">validation ownership and evidence contracts</Link> when adding checks, dependencies, or shared writes.</Item>
       </List>
     </Section>
 
@@ -319,10 +326,26 @@ mise run test --jobs 1                # serial debugging`}</CodeBlock>
     </Details>
 
     <Section title="Validation">
-      <CodeBlock lang="bash">{`mise run test
-codebase lint "$PWD"
-readme build --check
-git diff --check`}</CodeBlock>
+      <CodeBlock lang="bash">{`mise run validate                      # compact results, private full logs
+mise run validate --verbose            # full output for ephemeral CI
+BATS_NUMBER_OF_PARALLEL_JOBS=1 mise run validate`}</CodeBlock>
+
+      <Paragraph>
+        {"The gate runs tests, Codebase lint, generated-README verification, and whitespace checks. Those checks are independent and run serially; BATS/Rush still owns test parallelism. A failed check does not suppress its independent peers. Interruption stops later checks and contains the active process group."}
+      </Paragraph>
+      <Paragraph>
+        {"Every invocation prints its private log directory and one timed result per check. Full logs, command arguments, and per-check receipts remain there; failures include a bounded excerpt. The final "}
+        <Code>report.tsv</Code>
+        {" distinguishes passing checks from the whole-run outcome after cleanup. A partial run or cleanup failure cannot report overall success. Logs are private, not redacted; remove them when no longer needed."}
+      </Paragraph>
+      <Paragraph>
+        {"CI calls the same gate with "}<Code>--verbose</Code>
+        {" so detailed failures survive in its masked job log. The explicit "}
+        <Code>ci_lint_gate</Code>
+        {" declaration tells Codebase that this tested aggregate owns lint; it is not automatic inspection of the task. Read the "}
+        <Link href="CONTRIBUTING.md#reference-validation-workflow">adoption guide</Link>
+        {" for the report format, prerequisite example, concurrency ownership, process-group limits, and when shared writes require an exclusion boundary. The individual commands remain available for focused checks."}
+      </Paragraph>
 
       <Paragraph>
         {"The starter suite currently has "}
